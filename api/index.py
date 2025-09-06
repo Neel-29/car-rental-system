@@ -380,10 +380,10 @@ def process_monitoring_data():
         "avg_ear": monitoring.avg_ear
     })
 
-# Initialize database
-def create_tables():
-    with app.app_context():
-        try:
+# Initialize database safely
+def init_db():
+    try:
+        with app.app_context():
             db.create_all()
             
             # Create admin user if not exists
@@ -393,15 +393,11 @@ def create_tables():
                 db.session.add(admin)
                 db.session.commit()
                 print("Database initialized successfully")
-        except Exception as e:
-            print(f"Database initialization error: {e}")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
 
-# Initialize database on startup
-create_tables()
-
-# Vercel handler
-def handler(request):
-    return app(request.environ, start_response)
+# Initialize database
+init_db()
 
 if __name__ == '__main__':
     app.run(debug=True)
