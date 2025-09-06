@@ -82,6 +82,11 @@ class DriverMonitoring(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Test route for Vercel
+@app.route('/test')
+def test():
+    return jsonify({"status": "success", "message": "Car Rental System is running!"})
+
 # Routes
 @app.route('/')
 def index():
@@ -378,15 +383,25 @@ def process_monitoring_data():
 # Initialize database
 def create_tables():
     with app.app_context():
-        db.create_all()
-        
-        # Create admin user if not exists
-        if not User.query.filter_by(username='admin').first():
-            admin = User(username='admin', email='admin@example.com', role='admin')
-            admin.set_password('admin123')
-            db.session.add(admin)
-            db.session.commit()
+        try:
+            db.create_all()
+            
+            # Create admin user if not exists
+            if not User.query.filter_by(username='admin').first():
+                admin = User(username='admin', email='admin@example.com', role='admin')
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+                print("Database initialized successfully")
+        except Exception as e:
+            print(f"Database initialization error: {e}")
+
+# Initialize database on startup
+create_tables()
+
+# Vercel handler
+def handler(request):
+    return app(request.environ, start_response)
 
 if __name__ == '__main__':
-    create_tables()
     app.run(debug=True)
