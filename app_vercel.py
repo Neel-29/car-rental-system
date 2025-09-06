@@ -70,7 +70,10 @@ def load_user(user_id):
 # Routes
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"Error loading page: {str(e)}", 500
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -138,17 +141,20 @@ def dashboard():
 @app.route('/admin')
 @login_required
 def admin_dashboard():
-    if current_user.role != 'admin':
-        flash('Access denied')
-        return redirect(url_for('dashboard'))
-    
-    users = User.query.all()
-    cars = Car.query.all()
-    rentals = Rental.query.all()
-    companies = RentalCompany.query.all()
-    
-    return render_template('admin_dashboard.html', 
-                         users=users, cars=cars, rentals=rentals, companies=companies)
+    try:
+        if current_user.role != 'admin':
+            flash('Access denied')
+            return redirect(url_for('dashboard'))
+        
+        users = User.query.all()
+        cars = Car.query.all()
+        rentals = Rental.query.all()
+        companies = RentalCompany.query.all()
+        
+        return render_template('admin_dashboard.html', 
+                             users=users, cars=cars, rentals=rentals, companies=companies)
+    except Exception as e:
+        return f"Error loading admin dashboard: {str(e)}", 500
 
 @app.route('/car_owner')
 @login_required
@@ -333,8 +339,9 @@ def process_monitoring_data():
     
     return jsonify({'status': 'success'})
 
-if __name__ == '__main__':
-    with app.app_context():
+# Initialize database and create admin user
+with app.app_context():
+    try:
         db.create_all()
         
         # Create admin user if not exists
@@ -347,5 +354,9 @@ if __name__ == '__main__':
             )
             db.session.add(admin)
             db.session.commit()
-    
+            print("Admin user created successfully")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+
+if __name__ == '__main__':
     app.run(debug=True)
