@@ -225,54 +225,27 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: [],
             datasets: [{
-                label: 'Eye Aspect Ratio (EAR)',
+                label: 'Eye Aspect Ratio',
                 data: [],
                 borderColor: 'rgb(75, 192, 192)',
                 backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                borderWidth: 2,
                 tension: 0.1,
-                fill: true,
-                pointRadius: 2,
-                pointHoverRadius: 4
+                fill: true
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                x: {
-                    display: true,
-                    title: {
-                        display: true,
-                        text: 'Time (frames)'
-                    }
-                },
                 y: {
                     beginAtZero: true,
-                    max: 0.5,
-                    title: {
-                        display: true,
-                        text: 'EAR Value'
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.1)'
-                    }
+                    max: 0.5
                 }
             },
             plugins: {
                 legend: {
-                    display: true,
-                    position: 'top'
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false
+                    display: false
                 }
-            },
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
             }
         }
     });
@@ -361,10 +334,7 @@ async function stopAlarm() {
 }
 
 async function refreshChart() {
-    if (!sessionId) {
-        console.log('No active session for chart refresh');
-        return;
-    }
+    if (!sessionId) return;
     
     try {
         const response = await fetch(`/api/monitor/ear_data/${sessionId}`);
@@ -376,24 +346,20 @@ async function refreshChart() {
         }
         
         // Update chart with new data
-        if (data.ear_history && data.ear_history.length > 0) {
-            earData = data.ear_history;
-            earChart.data.labels = Array.from({length: earData.length}, (_, i) => i);
-            earChart.data.datasets[0].data = earData;
-            earChart.update('none');
-            
-            // Update statistics
-            const stats = data.statistics;
-            document.getElementById('minEAR').textContent = stats.min.toFixed(3);
-            document.getElementById('maxEAR').textContent = stats.max.toFixed(3);
-            
-            const trendElement = document.getElementById('earTrend');
-            trendElement.textContent = stats.trend;
-            trendElement.className = 'fw-bold ' + (stats.trend === 'increasing' ? 'text-success' : 
-                                                   stats.trend === 'decreasing' ? 'text-danger' : 'text-info');
-        } else {
-            console.log('No EAR data available for chart');
-        }
+        earData = data.ear_history;
+        earChart.data.labels = Array.from({length: earData.length}, (_, i) => i);
+        earChart.data.datasets[0].data = earData;
+        earChart.update('none');
+        
+        // Update statistics
+        const stats = data.statistics;
+        document.getElementById('minEAR').textContent = stats.min.toFixed(3);
+        document.getElementById('maxEAR').textContent = stats.max.toFixed(3);
+        
+        const trendElement = document.getElementById('earTrend');
+        trendElement.textContent = stats.trend;
+        trendElement.className = 'fw-bold ' + (stats.trend === 'increasing' ? 'text-success' : 
+                                               stats.trend === 'decreasing' ? 'text-danger' : 'text-info');
         
     } catch (error) {
         console.error('Error refreshing chart:', error);
@@ -527,45 +493,14 @@ async function updateStatus() {
         }
         
         // Update chart
-        if (data.ear !== undefined && data.ear > 0) {
-            earData.push(data.ear);
-            if (earData.length > 50) {
-                earData.shift();
-            }
-            
-            // Update chart data
-            earChart.data.labels = Array.from({length: earData.length}, (_, i) => i);
-            earChart.data.datasets[0].data = earData;
-            earChart.update('none');
-            
-            // Update statistics display
-            const minEAR = Math.min(...earData).toFixed(3);
-            const maxEAR = Math.max(...earData).toFixed(3);
-            const avgEAR = (earData.reduce((a, b) => a + b, 0) / earData.length).toFixed(3);
-            
-            document.getElementById('minEAR').textContent = minEAR;
-            document.getElementById('maxEAR').textContent = maxEAR;
-            
-            // Calculate trend
-            let trend = 'stable';
-            if (earData.length >= 10) {
-                const recent = earData.slice(-5);
-                const previous = earData.slice(-10, -5);
-                const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-                const previousAvg = previous.reduce((a, b) => a + b, 0) / previous.length;
-                
-                if (recentAvg > previousAvg * 1.05) {
-                    trend = 'increasing';
-                } else if (recentAvg < previousAvg * 0.95) {
-                    trend = 'decreasing';
-                }
-            }
-            
-            const trendElement = document.getElementById('earTrend');
-            trendElement.textContent = trend;
-            trendElement.className = 'fw-bold ' + (trend === 'increasing' ? 'text-success' : 
-                                                   trend === 'decreasing' ? 'text-danger' : 'text-info');
+        earData.push(data.ear);
+        if (earData.length > 50) {
+            earData.shift();
         }
+        
+        earChart.data.labels = Array.from({length: earData.length}, (_, i) => i);
+        earChart.data.datasets[0].data = earData;
+        earChart.update('none');
         
     } catch (error) {
         console.error('Error updating status:', error);
