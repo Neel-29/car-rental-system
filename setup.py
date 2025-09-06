@@ -16,7 +16,7 @@ def create_directories():
         'templates',
         'static/css',
         'static/js',
-        'Fatigue-Detection-System-Based-On-Behavioural-Characteristics-Of-Driver/models',
+        'models',
         'uploads',
         'logs'
     ]
@@ -37,7 +37,7 @@ def install_requirements():
 
 def download_model():
     """Download the dlib facial landmark model."""
-    model_path = "Fatigue-Detection-System-Based-On-Behavioural-Characteristics-Of-Driver/models/shape_predictor_70_face_landmarks.dat"
+    model_path = "models/shape_predictor_70_face_landmarks.dat"
     
     if os.path.exists(model_path):
         print("✓ Model file already exists")
@@ -45,7 +45,7 @@ def download_model():
     
     print("⚠️  Model file not found. Please download 'shape_predictor_70_face_landmarks.dat'")
     print("   from: http://dlib.net/files/shape_predictor_70_face_landmarks.dat.bz2")
-    print("   Extract it and place in: Fatigue-Detection-System-Based-On-Behavioural-Characteristics-Of-Driver/models/")
+    print("   Extract it and place in: models/")
     return False
 
 def create_env_file():

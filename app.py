@@ -104,7 +104,7 @@ class FatigueDetector:
         self.FACE_DOWNSAMPLE_RATIO = 0.45
         self.RESIZE_HEIGHT = 460
         self.thresh = 0.27
-        self.modelPath = "Fatigue-Detection-System-Based-On-Behavioural-Characteristics-Of-Driver/models/shape_predictor_70_face_landmarks.dat"
+        self.modelPath = "models/shape_predictor_70_face_landmarks.dat"
         
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(self.modelPath)

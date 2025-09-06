@@ -106,7 +106,7 @@ pip install -r requirements.txt
 The system requires the dlib facial landmark predictor model. Download it from:
 ```bash
 # Create models directory
-mkdir -p Fatigue-Detection-System-Based-On-Behavioural-Characteristics-Of-Driver/models
+mkdir -p models
 
 # Download the model (you may need to find a valid download link)
 # Place shape_predictor_70_face_landmarks.dat in the models directory

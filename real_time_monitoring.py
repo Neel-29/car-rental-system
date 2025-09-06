@@ -15,11 +15,18 @@ class RealTimeFatigueDetector:
         self.FACE_DOWNSAMPLE_RATIO = 0.45
         self.RESIZE_HEIGHT = 460
         self.thresh = 0.27
-        self.modelPath = "Fatigue-Detection-System-Based-On-Behavioural-Characteristics-Of-Driver/models/shape_predictor_70_face_landmarks.dat"
+        self.modelPath = "models/shape_predictor_70_face_landmarks.dat"
         
         # Initialize dlib components
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(self.modelPath)
+        try:
+            self.predictor = dlib.shape_predictor(self.modelPath)
+            self.model_available = True
+        except Exception as e:
+            print(f"Warning: Could not load facial landmark model: {e}")
+            print("Fatigue detection will be disabled. Please download the model file.")
+            self.predictor = None
+            self.model_available = False
         
         # Eye landmark indices
         self.leftEyeIndex = [36, 37, 38, 39, 40, 41]
@@ -400,49 +407,60 @@ def generate_frames(rental_id, user_id):
         
         # Initialize detector
         detector = dlib.get_frontal_face_detector()
-        predictor = dlib.shape_predictor('Fatigue-Detection-System-Based-On-Behavioural-Characteristics-Of-Driver/models/shape_predictor_70_face_landmarks.dat')
+        try:
+            predictor = dlib.shape_predictor('models/shape_predictor_70_face_landmarks.dat')
+            model_available = True
+        except Exception as e:
+            print(f"Warning: Could not load facial landmark model: {e}")
+            print("Fatigue detection will be disabled.")
+            predictor = None
+            model_available = False
         
         # Calibration phase
-        print("Calibrating fatigue detection system...")
-        calibration_frames = 0
-        total_ear = 0.0
-        start_time = time.time()
-        
-        while calibration_frames < 30:  # Calibrate for 30 frames
-            ret, frame = cap.read()
-            if not ret:
-                break
-                
-            # Preprocess frame
-            frame = fatigue_detector.preprocess_frame(frame)
+        if model_available:
+            print("Calibrating fatigue detection system...")
+            calibration_frames = 0
+            total_ear = 0.0
+            start_time = time.time()
             
-            # Detect faces
-            faces = detector(frame)
-            
-            if len(faces) > 0:
-                landmarks = fatigue_detector.get_landmarks(frame, faces[0], predictor)
-                if landmarks is not None:
-                    eyeStatus, ear = fatigue_detector.check_eye_status(landmarks)
-                    total_ear += ear
-                    calibration_frames += 1
+            while calibration_frames < 30:  # Calibrate for 30 frames
+                ret, frame = cap.read()
+                if not ret:
+                    break
                     
-                    # Draw calibration progress
-                    cv2.putText(frame, f"Calibrating... {calibration_frames}/30", 
-                              (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                # Preprocess frame
+                frame = fatigue_detector.preprocess_frame(frame)
+                
+                # Detect faces
+                faces = detector(frame)
+                
+                if len(faces) > 0:
+                    landmarks = fatigue_detector.get_landmarks(frame, faces[0], predictor)
+                    if landmarks is not None:
+                        eyeStatus, ear = fatigue_detector.check_eye_status(landmarks)
+                        total_ear += ear
+                        calibration_frames += 1
+                        
+                        # Draw calibration progress
+                        cv2.putText(frame, f"Calibrating... {calibration_frames}/30", 
+                                  (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                
+                # Encode frame
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
             
-            # Encode frame
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame_bytes = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        
-        # Calculate threshold
-        if calibration_frames > 0:
-            avg_ear = total_ear / calibration_frames
-            fatigue_detector.thresh = avg_ear * 0.7  # 30% below average
+            # Calculate threshold
+            if calibration_frames > 0:
+                avg_ear = total_ear / calibration_frames
+                fatigue_detector.thresh = avg_ear * 0.7  # 30% below average
+                fatigue_detector.calibrated = True
+                print(f"Calibration complete! SPF: {time.time() - start_time:.4f}s")
+                print(f"Average EAR: {avg_ear:.4f}, Threshold: {fatigue_detector.thresh:.4f}")
+        else:
+            print("Fatigue detection model not available - running in basic mode")
             fatigue_detector.calibrated = True
-            print(f"Calibration complete! SPF: {time.time() - start_time:.4f}s")
-            print(f"Average EAR: {avg_ear:.4f}, Threshold: {fatigue_detector.thresh:.4f}")
         
         # Main monitoring loop
         frame_count = 0
@@ -459,7 +477,7 @@ def generate_frames(rental_id, user_id):
             # Detect faces
             faces = detector(frame)
             
-            if len(faces) > 0:
+            if len(faces) > 0 and model_available:
                 landmarks = fatigue_detector.get_landmarks(frame, faces[0], predictor)
                 if landmarks is not None:
                     # Check eye status
@@ -510,6 +528,25 @@ def generate_frames(rental_id, user_id):
                                     json=data, timeout=0.1)
                     except:
                         pass
+            elif len(faces) > 0 and not model_available:
+                # Face detected but no model available
+                cv2.putText(frame, "Face Detected - Model Not Available", 
+                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                try:
+                    import requests
+                    data = {
+                        'rental_id': rental_id,
+                        'user_id': user_id,
+                        'ear': 0.0,
+                        'blink_count': 0,
+                        'drowsy': False,
+                        'face_detected': True,
+                        'timestamp': time.time()
+                    }
+                    requests.post('http://localhost:5000/api/monitor/process', 
+                                json=data, timeout=0.1)
+                except:
+                    pass
             else:
                 # No face detected
                 try:
@@ -529,13 +566,19 @@ def generate_frames(rental_id, user_id):
                     pass
             
             # Draw status on frame
-            cv2.putText(frame, f"EAR: {fatigue_detector.ear_history[-1]:.3f}" if fatigue_detector.ear_history else "EAR: 0.000", 
-                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            cv2.putText(frame, f"Blinks: {fatigue_detector.blinkCount}", 
-                       (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            cv2.putText(frame, f"Drowsy: {'YES' if fatigue_detector.drowsy else 'NO'}", 
-                       (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 
-                       (0, 0, 255) if fatigue_detector.drowsy else (0, 255, 0), 2)
+            if model_available:
+                cv2.putText(frame, f"EAR: {fatigue_detector.ear_history[-1]:.3f}" if fatigue_detector.ear_history else "EAR: 0.000", 
+                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(frame, f"Blinks: {fatigue_detector.blinkCount}", 
+                           (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                cv2.putText(frame, f"Drowsy: {'YES' if fatigue_detector.drowsy else 'NO'}", 
+                           (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 
+                           (0, 0, 255) if fatigue_detector.drowsy else (0, 255, 0), 2)
+            else:
+                cv2.putText(frame, "Model Not Available", 
+                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                cv2.putText(frame, "Basic Camera Mode", 
+                           (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
             
             # Encode frame
             ret, buffer = cv2.imencode('.jpg', frame)
