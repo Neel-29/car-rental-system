@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Car Rental System{% endblock %}
+
+{% block content %}
+<div class="hero-section bg-primary text-white py-5 mb-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold">Smart Car Rental System</h1>
+                <p class="lead">Revolutionary car rental platform with AI-powered driver monitoring for enhanced safety and security.</p>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-user-plus"></i> Get Started
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-car-side fa-10x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-car fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Car Owners</h5>
+                    <p class="card-text">List your vehicles and earn passive income by renting them to rental companies. Monitor your cars and track earnings in real-time.</p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="fas fa-check text-success"></i> Easy vehicle management</li>
+                        <li><i class="fas fa-check text-success"></i> Real-time earnings tracking</li>
+                        <li><i class="fas fa-check text-success"></i> Driver monitoring system</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-building fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Rental Companies</h5>
+                    <p class="card-text">Manage a fleet of vehicles and provide rental services to customers. Generate revenue through commissions and handling fees.</p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="fas fa-check text-success"></i> Fleet management tools</li>
+                        <li><i class="fas fa-check text-success"></i> Commission tracking</li>
+                        <li><i class="fas fa-check text-success"></i> Customer management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Customers</h5>
+                    <p class="card-text">Book vehicles easily and enjoy safe rides with AI-powered driver monitoring. Perfect for tourists and city residents.</p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="fas fa-check text-success"></i> Easy booking process</li>
+                        <li><i class="fas fa-check text-success"></i> Safety monitoring</li>
+                        <li><i class="fas fa-check text-success"></i> Real-time tracking</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">
+                        <i class="fas fa-shield-alt text-warning"></i> AI-Powered Driver Monitoring
+                    </h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Advanced Safety Features</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-eye text-primary"></i> Real-time drowsiness detection</li>
+                                <li><i class="fas fa-exclamation-triangle text-warning"></i> Instant alert system</li>
+                                <li><i class="fas fa-chart-line text-success"></i> Performance analytics</li>
+                                <li><i class="fas fa-mobile-alt text-info"></i> Mobile monitoring app</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Benefits for All Users</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-car-crash text-danger"></i> Reduced accident risk</li>
+                                <li><i class="fas fa-dollar-sign text-success"></i> Lower insurance costs</li>
+                                <li><i class="fas fa-thumbs-up text-primary"></i> Enhanced customer trust</li>
+                                <li><i class="fas fa-cog text-secondary"></i> Automated monitoring</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <h3>Ready to Get Started?</h3>
+            <p class="lead">Join thousands of users who trust our platform for safe and reliable car rentals.</p>
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-rocket"></i> Start Your Journey
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

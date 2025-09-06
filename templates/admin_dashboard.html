@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Car Rental System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tachometer-alt text-primary"></i> Admin Dashboard</h2>
+    <span class="badge bg-primary fs-6">System Administrator</span>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ stats.total_users }}</h4>
+                        <p class="mb-0">Total Users</p>
+                    </div>
+                    <i class="fas fa-users fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ stats.total_cars }}</h4>
+                        <p class="mb-0">Total Cars</p>
+                    </div>
+                    <i class="fas fa-car fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ stats.total_rentals }}</h4>
+                        <p class="mb-0">Total Rentals</p>
+                    </div>
+                    <i class="fas fa-clipboard-list fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ stats.active_rentals }}</h4>
+                        <p class="mb-0">Active Rentals</p>
+                    </div>
+                    <i class="fas fa-play-circle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Rentals -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock text-primary"></i> Recent Rentals
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_rentals %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Car</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rental in recent_rentals %}
+                                <tr>
+                                    <td>{{ rental.customer.username }}</td>
+                                    <td>{{ rental.car.make }} {{ rental.car.model }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if rental.status == 'active' else 'secondary' }}">
+                                            {{ rental.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ rental.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent rentals found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Driver Monitoring -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-eye text-warning"></i> Driver Monitoring
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_monitoring %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Driver</th>
+                                    <th>Car</th>
+                                    <th>Blinks</th>
+                                    <th>Alerts</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for monitor in recent_monitoring %}
+                                <tr>
+                                    <td>{{ monitor.driver_id }}</td>
+                                    <td>{{ monitor.car.make }} {{ monitor.car.model }}</td>
+                                    <td>{{ monitor.total_blinks }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if monitor.drowsiness_alerts > 0 else 'success' }}">
+                                            {{ monitor.drowsiness_alerts }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if monitor.status == 'active' else 'secondary' }}">
+                                            {{ monitor.status.title() }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No monitoring data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Management -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs text-secondary"></i> System Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-primary">
+                                <i class="fas fa-users"></i> Manage Users
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-success">
+                                <i class="fas fa-car"></i> Manage Cars
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-info">
+                                <i class="fas fa-building"></i> Manage Companies
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-warning">
+                                <i class="fas fa-chart-bar"></i> Analytics
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

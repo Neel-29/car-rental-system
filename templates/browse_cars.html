@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Cars - Car Rental System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-car text-primary"></i> Available Cars</h2>
+    <div>
+        {% if current_user.role == 'rental_company' %}
+            <a href="{{ url_for('rental_company_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        {% elif current_user.role == 'customer' %}
+            <a href="{{ url_for('customer_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="searchInput" class="form-label">Search Cars</label>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by make, model, or color...">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="makeFilter" class="form-label">Make</label>
+                        <select class="form-select" id="makeFilter">
+                            <option value="">All Makes</option>
+                            <option value="Toyota">Toyota</option>
+                            <option value="Honda">Honda</option>
+                            <option value="Ford">Ford</option>
+                            <option value="Chevrolet">Chevrolet</option>
+                            <option value="Nissan">Nissan</option>
+                            <option value="Hyundai">Hyundai</option>
+                            <option value="Kia">Kia</option>
+                            <option value="Mazda">Mazda</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="priceFilter" class="form-label">Max Daily Rate</label>
+                        <select class="form-select" id="priceFilter">
+                            <option value="">Any Price</option>
+                            <option value="30">Under $30</option>
+                            <option value="40">Under $40</option>
+                            <option value="50">Under $50</option>
+                            <option value="60">Under $60</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-primary w-100" onclick="filterCars()">
+                            <i class="fas fa-search"></i> Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cars Grid -->
+<div class="row" id="carsGrid">
+    {% for car in cars %}
+    <div class="col-lg-4 col-md-6 mb-4 car-card" 
+         data-make="{{ car.make }}" 
+         data-model="{{ car.model }}" 
+         data-color="{{ car.color }}" 
+         data-price="{{ car.daily_rate }}">
+        <div class="card h-100 shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title">{{ car.make }} {{ car.model }}</h5>
+                    <span class="badge bg-success">{{ car.status.title() }}</span>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Year</small>
+                        <p class="mb-0"><strong>{{ car.year }}</strong></p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Color</small>
+                        <p class="mb-0"><strong>{{ car.color }}</strong></p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">License Plate</small>
+                        <p class="mb-0"><code>{{ car.license_plate }}</code></p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Daily Rate</small>
+                        <p class="mb-0"><strong class="text-success">${{ "%.2f"|format(car.daily_rate) }}</strong></p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">Owner</small>
+                    <p class="mb-0">{{ car.owner.username }}</p>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    {% if current_user.role == 'rental_company' %}
+                        {% if not car.rental_company_id %}
+                            <form method="POST" action="{{ url_for('add_car_to_fleet', car_id=car.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-plus"></i> Add to Fleet
+                                </button>
+                            </form>
+                        {% else %}
+                            <button class="btn btn-secondary w-100" disabled>
+                                <i class="fas fa-check"></i> Already in Fleet
+                            </button>
+                        {% endif %}
+                    {% elif current_user.role == 'customer' %}
+                        <a href="{{ url_for('book_car', car_id=car.id) }}" class="btn btn-success">
+                            <i class="fas fa-calendar-check"></i> Book Now
+                        </a>
+                    {% else %}
+                        <button class="btn btn-info w-100" disabled>
+                            <i class="fas fa-info-circle"></i> View Details
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- No Cars Message -->
+{% if not cars %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No cars available</h5>
+                <p class="text-muted">There are currently no cars available for rental.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterCars() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const makeFilter = document.getElementById('makeFilter').value;
+    const priceFilter = document.getElementById('priceFilter').value;
+    
+    const carCards = document.querySelectorAll('.car-card');
+    
+    carCards.forEach(card => {
+        const make = card.dataset.make.toLowerCase();
+        const model = card.dataset.model.toLowerCase();
+        const color = card.dataset.color.toLowerCase();
+        const price = parseFloat(card.dataset.price);
+        
+        let show = true;
+        
+        // Search filter
+        if (searchTerm && !make.includes(searchTerm) && !model.includes(searchTerm) && !color.includes(searchTerm)) {
+            show = false;
+        }
+        
+        // Make filter
+        if (makeFilter && make !== makeFilter.toLowerCase()) {
+            show = false;
+        }
+        
+        // Price filter
+        if (priceFilter && price > parseFloat(priceFilter)) {
+            show = false;
+        }
+        
+        card.style.display = show ? 'block' : 'none';
+    });
+}
+
+// Real-time search
+document.getElementById('searchInput').addEventListener('input', filterCars);
+document.getElementById('makeFilter').addEventListener('change', filterCars);
+document.getElementById('priceFilter').addEventListener('change', filterCars);
+</script>
+{% endblock %}

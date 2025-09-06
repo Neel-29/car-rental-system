@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Driver Monitoring - Car Rental System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-eye text-warning"></i> Driver Monitoring</h2>
+    <div>
+        <button id="startMonitoring" class="btn btn-success">
+            <i class="fas fa-play"></i> Start Monitoring
+        </button>
+        <button id="stopMonitoring" class="btn btn-danger" disabled>
+            <i class="fas fa-stop"></i> Stop Monitoring
+        </button>
+    </div>
+</div>
+
+<!-- Monitoring Status -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4 id="blinkCount">0</h4>
+                <p class="mb-0">Total Blinks</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4 id="drowsinessAlerts">0</h4>
+                <p class="mb-0">Drowsiness Alerts</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4 id="avgEAR">0.00</h4>
+                <p class="mb-0">Avg Eye Aspect Ratio</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4 id="monitoringStatus">Inactive</h4>
+                <p class="mb-0">Status</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Feed and Controls -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-video text-primary"></i> Live Camera Feed
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="position-relative">
+                    <div id="videoFeed" width="100%" height="400" style="background: #000; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;">
+                        <div class="text-center">
+                            <i class="fas fa-video fa-3x mb-3"></i>
+                            <p>Driver Monitoring Active</p>
+                            <small>Simulated monitoring mode</small>
+                        </div>
+                    </div>
+                    <canvas id="overlayCanvas" width="640" height="400" style="position: absolute; top: 0; left: 0; pointer-events: none; display: none;"></canvas>
+                </div>
+                
+                <!-- Alert Display -->
+                <div id="alertDisplay" class="alert alert-danger text-center mt-3" style="display: none;">
+                    <h4><i class="fas fa-exclamation-triangle"></i> DROWSINESS DETECTED!</h4>
+                    <p class="mb-0">Please take a break or switch drivers immediately.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle text-info"></i> Monitoring Info
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Rental Details:</h6>
+                    <p class="mb-1"><strong>Vehicle:</strong> {{ rental.car.make }} {{ rental.car.model }}</p>
+                    <p class="mb-1"><strong>Driver:</strong> {{ rental.customer.username }}</p>
+                    <p class="mb-1"><strong>Period:</strong> {{ rental.start_date.strftime('%Y-%m-%d') }} to {{ rental.end_date.strftime('%Y-%m-%d') }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Safety Guidelines:</h6>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-check text-success"></i> Keep eyes on the road</li>
+                        <li><i class="fas fa-check text-success"></i> Take breaks every 2 hours</li>
+                        <li><i class="fas fa-check text-success"></i> Stay alert and focused</li>
+                        <li><i class="fas fa-check text-success"></i> Pull over if drowsy</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>System Status:</h6>
+                    <div class="d-flex justify-content-between">
+                        <span>Camera:</span>
+                        <span id="cameraStatus" class="badge bg-secondary">Not Connected</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Detection:</span>
+                        <span id="detectionStatus" class="badge bg-secondary">Inactive</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Real-time Chart -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line text-success"></i> Eye Aspect Ratio
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="earChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monitoring History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history text-secondary"></i> Monitoring Session History
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Session Start</th>
+                                <th>Duration</th>
+                                <th>Total Blinks</th>
+                                <th>Drowsiness Alerts</th>
+                                <th>Avg EAR</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionHistory">
+                            <!-- Session history will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let monitoringActive = false;
+let sessionId = null;
+let video = null;
+let canvas = null;
+let ctx = null;
+let earChart = null;
+let earData = [];
+let blinkCount = 0;
+let drowsinessAlerts = 0;
+let avgEAR = 0.0;
+
+// Initialize monitoring system
+document.addEventListener('DOMContentLoaded', function() {
+    video = document.getElementById('videoFeed');
+    canvas = document.getElementById('overlayCanvas');
+    ctx = canvas.getContext('2d');
+    
+    // Initialize Chart.js
+    const chartCtx = document.getElementById('earChart').getContext('2d');
+    earChart = new Chart(chartCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Eye Aspect Ratio',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 0.5
+                }
+            }
+        }
+    });
+    
+    // Event listeners
+    document.getElementById('startMonitoring').addEventListener('click', startMonitoring);
+    document.getElementById('stopMonitoring').addEventListener('click', stopMonitoring);
+});
+
+async function startMonitoring() {
+    try {
+        // Start monitoring session
+        const response = await fetch(`/api/monitor/start/{{ rental.id }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        sessionId = data.session_id;
+        
+        // Update UI
+        document.getElementById('startMonitoring').disabled = true;
+        document.getElementById('stopMonitoring').disabled = false;
+        document.getElementById('monitoringStatus').textContent = 'Active';
+        document.getElementById('cameraStatus').textContent = 'Simulated';
+        document.getElementById('cameraStatus').className = 'badge bg-info';
+        document.getElementById('detectionStatus').textContent = 'Active';
+        document.getElementById('detectionStatus').className = 'badge bg-success';
+        
+        // Update video feed display
+        const videoFeed = document.getElementById('videoFeed');
+        videoFeed.innerHTML = `
+            <div class="text-center">
+                <div class="mb-3">
+                    <i class="fas fa-eye fa-3x text-success" style="animation: pulse 2s infinite;"></i>
+                </div>
+                <h5 class="text-success mb-2">Driver Monitoring Active</h5>
+                <p class="text-light mb-3">Simulated monitoring mode - No camera required</p>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <div class="bg-success rounded p-2">
+                            <small class="d-block text-white">Blink Count</small>
+                            <strong class="text-white" id="liveBlinkCount">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-warning rounded p-2">
+                            <small class="d-block text-white">Alerts</small>
+                            <strong class="text-white" id="liveAlertCount">0</strong>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-info rounded p-2">
+                            <small class="d-block text-white">EAR</small>
+                            <strong class="text-white" id="liveEAR">0.00</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        monitoringActive = true;
+        
+        // Start processing frames
+        processFrames();
+        
+    } catch (error) {
+        console.error('Error starting monitoring:', error);
+        alert('Failed to start monitoring: ' + error.message);
+    }
+}
+
+function stopMonitoring() {
+    if (sessionId) {
+        fetch(`/api/monitor/stop/${sessionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+    }
+    
+    // Update UI
+    document.getElementById('startMonitoring').disabled = false;
+    document.getElementById('stopMonitoring').disabled = true;
+    document.getElementById('monitoringStatus').textContent = 'Inactive';
+    document.getElementById('cameraStatus').textContent = 'Not Connected';
+    document.getElementById('cameraStatus').className = 'badge bg-secondary';
+    document.getElementById('detectionStatus').textContent = 'Inactive';
+    document.getElementById('detectionStatus').className = 'badge bg-secondary';
+    
+    // Reset video feed display
+    const videoFeed = document.getElementById('videoFeed');
+    videoFeed.innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-video fa-3x mb-3"></i>
+            <p>Driver Monitoring Inactive</p>
+            <small>Click "Start Monitoring" to begin</small>
+        </div>
+    `;
+    
+    monitoringActive = false;
+}
+
+function processFrames() {
+    if (!monitoringActive) return;
+    
+    // Simulate fatigue detection (in real implementation, this would call the Python backend)
+    const mockEAR = 0.25 + Math.random() * 0.1; // Simulate EAR between 0.25-0.35
+    const isDrowsy = mockEAR < 0.27;
+    
+    // Update counters
+    if (isDrowsy) {
+        drowsinessAlerts++;
+        document.getElementById('alertDisplay').style.display = 'block';
+        
+        // Add visual effect to video feed
+        const videoFeed = document.getElementById('videoFeed');
+        videoFeed.style.border = '3px solid #dc3545';
+        videoFeed.style.boxShadow = '0 0 20px #dc3545';
+    } else {
+        document.getElementById('alertDisplay').style.display = 'none';
+        blinkCount++;
+        
+        // Remove visual effect
+        const videoFeed = document.getElementById('videoFeed');
+        videoFeed.style.border = 'none';
+        videoFeed.style.boxShadow = 'none';
+    }
+    
+    // Update average EAR
+    avgEAR = (avgEAR + mockEAR) / 2;
+    
+    // Update UI
+    document.getElementById('blinkCount').textContent = blinkCount;
+    document.getElementById('drowsinessAlerts').textContent = drowsinessAlerts;
+    document.getElementById('avgEAR').textContent = avgEAR.toFixed(2);
+    
+    // Update live display
+    const liveBlinkCount = document.getElementById('liveBlinkCount');
+    const liveAlertCount = document.getElementById('liveAlertCount');
+    const liveEAR = document.getElementById('liveEAR');
+    
+    if (liveBlinkCount) liveBlinkCount.textContent = blinkCount;
+    if (liveAlertCount) liveAlertCount.textContent = drowsinessAlerts;
+    if (liveEAR) liveEAR.textContent = avgEAR.toFixed(2);
+    
+    // Update chart
+    earData.push(mockEAR);
+    if (earData.length > 50) {
+        earData.shift();
+    }
+    
+    earChart.data.labels = Array.from({length: earData.length}, (_, i) => i);
+    earChart.data.datasets[0].data = earData;
+    earChart.update('none');
+    
+    // Send data to backend every 5 seconds
+    if (blinkCount % 10 === 0) {
+        sendMonitoringData();
+    }
+    
+    // Continue processing
+    setTimeout(processFrames, 100); // Process every 100ms instead of using requestAnimationFrame
+}
+
+async function sendMonitoringData() {
+    if (!sessionId) return;
+    
+    try {
+        const response = await fetch('/api/monitor/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                session_id: sessionId,
+                blink_count: blinkCount,
+                drowsiness_alerts: drowsinessAlerts,
+                avg_ear: avgEAR
+            })
+        });
+        
+        if (response.ok) {
+            console.log('Monitoring data sent successfully');
+        }
+    } catch (error) {
+        console.error('Error sending monitoring data:', error);
+    }
+}
+</script>
+{% endblock %}

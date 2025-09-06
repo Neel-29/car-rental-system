@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Car Owner Dashboard - Car Rental System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-car text-primary"></i> My Cars Dashboard</h2>
+    <a href="{{ url_for('add_car') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add New Car
+    </a>
+</div>
+
+<!-- Income Summary -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>${{ "%.2f"|format(total_income) }}</h4>
+                        <p class="mb-0">Total Income Earned</p>
+                    </div>
+                    <i class="fas fa-dollar-sign fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ cars|length }}</h4>
+                        <p class="mb-0">Total Cars Listed</p>
+                    </div>
+                    <i class="fas fa-car fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Cars -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list"></i> My Vehicles
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if cars %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Make & Model</th>
+                                    <th>Year</th>
+                                    <th>License Plate</th>
+                                    <th>Daily Rate</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for car in cars %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ car.make }} {{ car.model }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ car.color }}</small>
+                                    </td>
+                                    <td>{{ car.year }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ car.license_plate }}</span>
+                                    </td>
+                                    <td>${{ "%.2f"|format(car.daily_rate) }}/day</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if car.status == 'available' else 'warning' if car.status == 'rented' else 'danger' }}">
+                                            {{ car.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="viewCar({{ car.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" onclick="editCar({{ car.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-car fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No cars listed yet</h5>
+                        <p class="text-muted">Start earning by adding your first vehicle!</p>
+                        <a href="{{ url_for('add_car') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Your First Car
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Rentals -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock text-warning"></i> Active Rentals
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if active_rentals %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Car</th>
+                                    <th>Rental Period</th>
+                                    <th>Total Amount</th>
+                                    <th>Your Earnings</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rental in active_rentals %}
+                                <tr>
+                                    <td>{{ rental.customer.username }}</td>
+                                    <td>{{ rental.car.make }} {{ rental.car.model }}</td>
+                                    <td>
+                                        {{ rental.start_date.strftime('%Y-%m-%d') }} to 
+                                        {{ rental.end_date.strftime('%Y-%m-%d') }}
+                                    </td>
+                                    <td>${{ "%.2f"|format(rental.total_amount) }}</td>
+                                    <td>
+                                        <strong class="text-success">
+                                            ${{ "%.2f"|format(rental.total_amount - rental.commission - rental.handling_fee) }}
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('monitor_driver', rental_id=rental.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-eye"></i> Monitor Driver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No active rentals at the moment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewCar(carId) {
+    // Implement car details view
+    console.log('View car:', carId);
+}
+
+function editCar(carId) {
+    // Implement car edit functionality
+    console.log('Edit car:', carId);
+}
+</script>
+{% endblock %}

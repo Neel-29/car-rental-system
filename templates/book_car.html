@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Book Car - Car Rental System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-calendar-check text-primary"></i> Book Vehicle
+                </h3>
+            </div>
+            <div class="card-body">
+                <!-- Car Details -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ car.make }} {{ car.model }}</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Year:</strong> {{ car.year }}</p>
+                                <p class="mb-1"><strong>Color:</strong> {{ car.color }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>License Plate:</strong> {{ car.license_plate }}</p>
+                                <p class="mb-1"><strong>Daily Rate:</strong> ${{ "%.2f"|format(car.daily_rate) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Booking Summary</h6>
+                        <div id="bookingSummary">
+                            <p class="mb-1">Duration: <span id="duration">0</span> days</p>
+                            <p class="mb-1">Daily Rate: ${{ "%.2f"|format(car.daily_rate) }}</p>
+                            <p class="mb-0"><strong>Total Amount: $<span id="totalAmount">0.00</span></strong></p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('browse_cars') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-arrow-left"></i> Back to Search
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check"></i> Confirm Booking
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const durationSpan = document.getElementById('duration');
+    const totalAmountSpan = document.getElementById('totalAmount');
+    const dailyRate = {{ car.daily_rate }};
+    
+    function updateBookingSummary() {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        
+        if (startDate && endDate && endDate > startDate) {
+            const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+            const totalAmount = duration * dailyRate;
+            
+            durationSpan.textContent = duration;
+            totalAmountSpan.textContent = totalAmount.toFixed(2);
+        } else {
+            durationSpan.textContent = '0';
+            totalAmountSpan.textContent = '0.00';
+        }
+    }
+    
+    startDateInput.addEventListener('change', updateBookingSummary);
+    endDateInput.addEventListener('change', updateBookingSummary);
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.min = today;
+    endDateInput.min = today;
+});
+</script>
+{% endblock %}
